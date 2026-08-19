@@ -1,83 +1,91 @@
-# Pelican 1606 Organizer - Windows App Build
+# Pelican 1606 Organizer
 
-This folder builds your CAD tool into a real double-clickable Windows
-program (`PelicanOrganizer.exe`) — no Python install on your Windows
-machine required, ever.
+Generates STEP files for a 4-panel, lap-jointed organizer baseplate
+sized to a Pelican 1606 lid, with an optional Gridfinity pocket grid,
+a customizable hole pattern (round or elongated/slot, evenly spaced),
+and an infill pattern (grid / honeycomb / diagonal) cut into the panel
+instead of leaving it solid.
 
-## How it works
+## Preview before you build (`preview.html`)
 
-You can't cross-compile a Windows `.exe` from a Linux machine when the
-program depends on a big compiled library like CadQuery (it needs
-Windows-native binaries). The reliable, free way around that is to let
-GitHub build it for you on an actual Windows machine in the cloud
-(GitHub Actions), then you just download the finished `.exe`. You never
-install Python — GitHub's temporary build machine does.
+Open `preview.html` in any browser — no install, no CadQuery, works
+offline. It's a live 2D layout tool: every parameter has a form field,
+and the drawing updates instantly as you change them. Use it to dial
+in dimensions, hole counts/spacing, and infill before spending a CI
+run on the real 3D build.
 
-Total time: about 5 minutes of clicking, then a 3-5 minute automatic
-build.
+- **Assembled plate / Separate pieces** toggle at the top switches
+  between the full lid and the 4 individual quadrant pieces (as they'll
+  actually come out of the STEP export), each with a dashed line
+  showing roughly where its lap-joint overlap is.
+- Every hole and infill feature shown is guaranteed collision-safe:
+  the same math that draws the preview also drives the real generator,
+  so what you see is what you'll get. Specifically, the tool
+  automatically keeps new holes/infill clear of:
+  - the 6 fixed perimeter mounting holes
+  - the Gridfinity pockets (if enabled)
+  - each other (custom holes vs. infill)
+  - the quadrant split lines (custom holes only — a hole placed exactly
+    on a seam would get physically cut in half when the plate splits
+    into quadrants; infill is decorative, so it's fine for it to
+    continue across a seam)
+- Any candidate that would collide gets silently skipped, and the
+  stats bar above the drawing tells you how many were skipped so you
+  can tell if your spacing is too tight for the space available.
 
-## Steps
+## Generating the real STEP files (GitHub Actions)
 
-1. **Create a free GitHub account** (skip if you already have one):
-   https://github.com/signup
+Same reasoning as before: CadQuery needs a real Windows-or-Linux
+Python environment to run, which this chat can't do locally, so
+GitHub's servers do it for you for free. You need a (free) GitHub
+account, but never install anything yourself.
 
-2. **Create a new repository**:
-   - Go to https://github.com/new
-   - Name it something like `pelican-organizer`
-   - Leave it Public or Private, doesn't matter
-   - Click "Create repository" (don't add a README/gitignore — leave defaults)
+1. Repo already set up at `murraydeathdesigns/Pelican-Organizer`? Just
+   upload/overwrite the changed files (drag onto the repo's file list,
+   or use "Add file → Upload files"). New/changed files this round:
+   `panel_layout.py`, `generate_step_files.py`, `preview.html`,
+   `.github/workflows/generate-step-files.yml`.
+2. Actions tab → "Generate STEP Files" → "Run workflow". A form pops
+   up with every parameter (dimensions, Gridfinity, custom holes,
+   infill) — set them to match whatever you liked in the preview, or
+   leave the defaults.
+3. Wait under a minute (it's a plain script run, no exe-building).
+4. Open the finished run → download the `Pelican-1606-STEP-files`
+   artifact. That's your four `Pelican_1606_Q*.step` files.
 
-3. **Upload these files**:
-   - On your new repo's page, click "uploading an existing file" (or
-     "Add file" -> "Upload files")
-   - Drag the *entire contents* of this folder in — including the
-     hidden-looking `.github` folder with `workflows/build-windows.yml`
-     inside it. If your browser/OS won't drag a folder with a dot in
-     its name, use "Add file" -> "Create new file" and type
-     `.github/workflows/build-windows.yml` as the filename, then paste
-     that file's contents in.
-   - Commit the upload.
+### Parameters
 
-4. **Let it build**:
-   - Click the "Actions" tab at the top of your repo.
-   - You should see a run called "Build Windows EXE" already running
-     (it starts automatically on upload). If it's not there, click
-     "Build Windows EXE" on the left, then "Run workflow".
-   - Wait for the green checkmark (a few minutes).
+| Group | Field | Notes |
+|---|---|---|
+| Panel | length / width / thickness | mm |
+| Gridfinity | enable / bottom-left-only / magnets | 42mm pitch, 6x5 max grid |
+| Custom holes | shape | `round` or `slot` (elongated) |
+| | diameter | hole diameter, or slot width |
+| | slot extra length | slot only — added to diameter for total end-to-end length |
+| | slot axis | slot only — `x` or `y` |
+| | count X / Y, spacing X / Y | holes are always evenly spaced and centered by count + spacing, not a fixed grid pitch |
+| Infill | pattern | `none`, `grid` (round holes), `honeycomb` (hex cells), `diagonal` (45°-rotated grid) |
+| | spacing | pitch between features |
+| | feature size | hole diameter, or hexagon flat-to-flat width |
 
-5. **Download your app**:
-   - Click into the finished run.
-   - Scroll down to "Artifacts" and download `PelicanOrganizer-windows-exe`
-     (a zip file — this one's bigger than before, tens of MB, because it
-     now bundles CadQuery's full dependency chain alongside the exe
-     instead of trying to cram it into one file).
-   - Unzip it into its own folder somewhere permanent (e.g.
-     `C:\Apps\PelicanOrganizer\`). **Keep every file in that folder
-     together** — `PelicanOrganizer.exe` needs its neighboring DLL/data
-     files sitting right next to it to run. Don't copy just the .exe
-     out on its own.
-   - Double-click `PelicanOrganizer.exe`. That's your app — no
-     installer, no Python, nothing else needed. You can make a shortcut
-     to it on your Desktop/Start Menu; just don't move the .exe itself
-     out of its folder.
+`panel_layout.py` is the single source of truth for all of this
+geometry math (positions, spacing, collision checks) — both
+`generate_step_files.py` (real 3D cuts) and `preview.html`'s inlined
+JavaScript (`panel_layout.js`, kept in exact sync) implement the exact
+same algorithm, cross-checked against each other during development.
 
 ## If the build fails (red X instead of green check)
 
 Click into the failed run, open whichever step is marked with a red X,
-and copy the red error text back to me — I'll adjust the workflow or
-script and you re-upload just the changed file(s).
+and copy the red error text back — I'll adjust the script and you
+re-upload just the changed file(s).
 
-Note: the build intentionally strips out and replaces (`stub_casadi.py`)
-one of CadQuery's dependencies, `casadi` — it's only used by a CadQuery
-feature this app doesn't touch, and its real package is notoriously
-unreliable to bundle with PyInstaller.
+## Also included: standalone Windows .exe build (optional, unrelated path)
 
-## Using the app
-
-- Set the panel Length/Width/Thickness (defaults match a Pelican 1606
-  lid interior).
-- Toggle the Gridfinity baseplate grid, restrict it to one quadrant,
-  and add magnet holes if you want them.
-- Pick an output folder (defaults to your Desktop).
-- Click "Generate & Export STEP Files". It writes one STEP file per
-  quadrant (plus STL if you checked that box) to the folder you chose.
+`organizer_app.py` + `build_windows.py` + `stub_casadi.py` +
+`.github/workflows/build-windows.yml` build a double-clickable Windows
+GUI app instead of just STEP files, via the same GitHub Actions
+approach. This predates the preview/infill/custom-hole features above
+and hasn't been updated to include them — it's left in the repo in
+case you want a real desktop app later, but the STEP-file workflow
+above is the actively maintained path.

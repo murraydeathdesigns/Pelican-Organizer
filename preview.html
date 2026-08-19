@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pelican 1606 Organizer - Layout Preview</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --panel-bg: #ffffff;
+    --ink: #23272e;
+    --muted: #6b7280;
+    --line: #d8dce2;
+    --accent: #2563eb;
+
+    --c-panel-fill: #eef0f3;
+    --c-panel-stroke: #2f333b;
+    --c-mount: #c0392b;
+    --c-gridfinity-fill: #ede7fb;
+    --c-gridfinity-stroke: #7c5cbf;
+    --c-hole: #2563eb;
+    --c-infill: #16a34a;
+    --c-seam: #9aa1ab;
+    --c-lap: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+  }
+  aside.controls {
+    background: var(--panel-bg);
+    border-right: 1px solid var(--line);
+    padding: 18px;
+    overflow-y: auto;
+    max-height: 100vh;
+  }
+  aside.controls h1 {
+    font-size: 16px;
+    margin: 0 0 4px;
+  }
+  aside.controls p.sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  fieldset {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin: 0 0 14px;
+    padding: 10px 12px 12px;
+  }
+  legend {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0 4px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 6px 0;
+  }
+  .row label {
+    font-size: 13px;
+    flex: 1;
+  }
+  .row input[type="number"], .row select {
+    width: 110px;
+    padding: 4px 6px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .row input[type="checkbox"] { width: 16px; height: 16px; }
+  .subrow-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin: -3px 0 6px;
+  }
+  main.preview {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .toggle-group {
+    display: inline-flex;
+    background: var(--panel-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .toggle-group button {
+    border: none;
+    background: transparent;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .toggle-group button.active {
+    background: var(--accent);
+    color: white;
+  }
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    background: var(--panel-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+  }
+  .stats .stat { white-space: nowrap; }
+  .stats .stat b { color: var(--ink); }
+  .warning {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    color: #9a3412;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    display: none;
+  }
+  .canvas-wrap {
+    background: var(--panel-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    flex: 1;
+    min-height: 480px;
+    display: flex;
+  }
+  svg { width: 100%; height: 100%; }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--panel-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 14px;
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .quadrant-label {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="controls">
+    <h1>Pelican 1606 Organizer</h1>
+    <p class="sub">Live layout preview - matches generate_step_files.py exactly (same panel_layout.js math, ported from the Python module used by the GitHub Actions build). No CadQuery needed to see this; it's just a schematic top-down check of hole/infill placement before you spend a CI run on it.</p>
+
+    <fieldset>
+      <legend>Panel</legend>
+      <div class="row"><label for="length">Length (X, mm)</label><input type="number" id="length" value="617" step="1"></div>
+      <div class="row"><label for="width">Width (Y, mm)</label><input type="number" id="width" value="494" step="1"></div>
+      <div class="row"><label for="thickness">Thickness (mm)</label><input type="number" id="thickness" value="5.5" step="0.5"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Gridfinity</legend>
+      <div class="row"><label for="enableGridfinity">Enable Gridfinity grid</label><input type="checkbox" id="enableGridfinity" checked></div>
+      <div class="row"><label for="gridfinityQ3Only">Bottom-left quadrant only</label><input type="checkbox" id="gridfinityQ3Only" checked></div>
+      <div class="row"><label for="gridfinityMagnets">Add magnet holes</label><input type="checkbox" id="gridfinityMagnets" checked></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Custom Hole Pattern</legend>
+      <div class="row"><label for="enableHoles">Enable</label><input type="checkbox" id="enableHoles"></div>
+      <div class="row"><label for="holeShape">Shape</label>
+        <select id="holeShape">
+          <option value="round">Round</option>
+          <option value="slot">Slot (elongated)</option>
+        </select>
+      </div>
+      <div class="row"><label for="holeDiameter">Diameter / width (mm)</label><input type="number" id="holeDiameter" value="5" step="0.5"></div>
+      <div class="row" id="slotLengthRow"><label for="holeSlotLength">Slot extra length (mm)</label><input type="number" id="holeSlotLength" value="10" step="1"></div>
+      <div class="row" id="slotAxisRow"><label for="holeSlotAxis">Slot axis</label>
+        <select id="holeSlotAxis">
+          <option value="x">X (horizontal)</option>
+          <option value="y">Y (vertical)</option>
+        </select>
+      </div>
+      <div class="row"><label for="holeCountX">Count (X)</label><input type="number" id="holeCountX" value="4" step="1" min="1"></div>
+      <div class="row"><label for="holeCountY">Count (Y)</label><input type="number" id="holeCountY" value="3" step="1" min="1"></div>
+      <div class="row"><label for="holeSpacingX">Spacing X (mm)</label><input type="number" id="holeSpacingX" value="80" step="1"></div>
+      <div class="row"><label for="holeSpacingY">Spacing Y (mm)</label><input type="number" id="holeSpacingY" value="80" step="1"></div>
+      <p class="subrow-note">Holes are always evenly spaced and centered by count + spacing. Any that would land too close to a mounting hole are automatically skipped (shown as faint red X below).</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Infill Pattern</legend>
+      <div class="row"><label for="infillPattern">Pattern</label>
+        <select id="infillPattern">
+          <option value="none">None (solid)</option>
+          <option value="grid">Grid (round)</option>
+          <option value="honeycomb">Honeycomb</option>
+          <option value="diagonal">Diagonal</option>
+        </select>
+      </div>
+      <div class="row"><label for="infillSpacing">Spacing / pitch (mm)</label><input type="number" id="infillSpacing" value="20" step="1"></div>
+      <div class="row"><label for="infillCutWidth">Feature size (mm)</label><input type="number" id="infillCutWidth" value="10" step="1"></div>
+      <p class="subrow-note">Infill automatically fills the panel field and skips any feature that would collide with a mounting hole or the custom hole pattern above.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Clearance</legend>
+      <div class="row"><label for="minClearance">Min. gap between features (mm)</label><input type="number" id="minClearance" value="1.5" step="0.5"></div>
+    </fieldset>
+  </aside>
+
+  <main class="preview">
+    <div class="toolbar">
+      <div class="toggle-group" id="viewToggle">
+        <button data-view="assembled" class="active">Assembled plate</button>
+        <button data-view="exploded">Separate pieces</button>
+      </div>
+      <div class="legend">
+        <span class="item"><span class="swatch" style="background:var(--c-mount)"></span>Mounting hole</span>
+        <span class="item"><span class="swatch" style="background:var(--c-gridfinity-fill);border:1px solid var(--c-gridfinity-stroke)"></span>Gridfinity cell</span>
+        <span class="item"><span class="swatch" style="background:var(--c-hole)"></span>Custom hole</span>
+        <span class="item"><span class="swatch" style="background:var(--c-infill)"></span>Infill</span>
+        <span class="item"><span class="swatch" style="background:var(--c-lap)"></span>Lap joint zone</span>
+      </div>
+    </div>
+
+    <div class="warning" id="warningBox"></div>
+
+    <div class="stats" id="statsBox"></div>
+
+    <div class="canvas-wrap">
+      <svg id="svgPreview" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </main>
+</div>
+
+<script>
+// ---------------------------------------------------------------------
+// panel_layout.js, inlined verbatim (kept in sync with the standalone
+// file of the same name / panel_layout.py - see that file's header).
+// ---------------------------------------------------------------------
+function evenlySpaced(count, spacing) {
+  if (count <= 1) return [0.0];
+  const span = spacing * (count - 1);
+  const start = -span / 2.0;
+  const out = [];
+  for (let i = 0; i < count; i++) out.push(start + i * spacing);
+  return out;
+}
+
+function gridPoints(countX, spacingX, countY, spacingY) {
+  const xs = evenlySpaced(countX, spacingX);
+  const ys = evenlySpaced(countY, spacingY);
+  const out = [];
+  for (const x of xs) for (const y of ys) out.push([x, y]);
+  return out;
+}
+
+function rotatePoint(x, y, angleDeg) {
+  const a = (angleDeg * Math.PI) / 180.0;
+  return [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+}
+
+function hexPoints(spacing, halfX, halfY) {
+  const rowH = (spacing * Math.sqrt(3)) / 2.0;
+  if (rowH <= 0 || spacing <= 0) return [];
+  const maxRow = Math.floor((halfY + spacing) / rowH) + 1;
+  const maxCol = Math.floor((halfX + spacing) / spacing) + 1;
+  const points = [];
+  for (let j = -maxRow; j <= maxRow; j++) {
+    const y = j * rowH;
+    const xOffset = j % 2 !== 0 ? spacing / 2.0 : 0.0;
+    for (let i = -maxCol; i <= maxCol; i++) {
+      const x = i * spacing + xOffset;
+      points.push([x, y]);
+    }
+  }
+  return points;
+}
+
+function distPointToSegment(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const segLenSq = dx * dx + dy * dy;
+  if (segLenSq === 0) return Math.hypot(px - ax, py - ay);
+  let t = ((px - ax) * dx + (py - ay) * dy) / segLenSq;
+  t = Math.max(0.0, Math.min(1.0, t));
+  const cx = ax + t * dx, cy = ay + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}
+
+function circleOk(x, y, radius, exclusions, clearance) {
+  for (const [cx, cy, cr] of exclusions) {
+    if (Math.hypot(x - cx, y - cy) < radius + cr + clearance) return false;
+  }
+  return true;
+}
+
+function slotOk(x, y, halfLength, axis, halfWidth, exclusions, clearance) {
+  let ax, ay, bx, by;
+  if (axis === "y") {
+    ax = x; ay = y - halfLength; bx = x; by = y + halfLength;
+  } else {
+    ax = x - halfLength; ay = y; bx = x + halfLength; by = y;
+  }
+  for (const [cx, cy, cr] of exclusions) {
+    if (distPointToSegment(cx, cy, ax, ay, bx, by) < halfWidth + cr + clearance) return false;
+  }
+  return true;
+}
+
+const DEFAULT_CONFIG = {
+  length: 617.0, width: 494.0, thickness: 5.5, cornerRadius: 25.4,
+  mountOffset: 25.0, cbThroughDia: 4.5, cbDia: 8.5, cbDepth: 2.5,
+  enableGridfinity: true, gridfinityQ3Only: true, gridfinityMagnets: true,
+  enableHoles: false, holeShape: "round", holeDiameter: 5.0, holeSlotLength: 10.0,
+  holeSlotAxis: "x", holeCountX: 4, holeCountY: 3, holeSpacingX: 80.0, holeSpacingY: 80.0,
+  holeFieldMargin: 20.0,
+  infillPattern: "none", infillSpacing: 20.0, infillCutWidth: 10.0, infillFieldMargin: 20.0,
+  minClearance: 1.5,
+};
+
+const MAX_INFILL_FEATURES = 5000;
+
+function mountingHolePoints(cfg) {
+  const mx = cfg.length / 2.0 - cfg.mountOffset;
+  const my = cfg.width / 2.0 - cfg.mountOffset;
+  return [[mx, my], [-mx, my], [-mx, -my], [mx, -my], [0, my], [0, -my]];
+}
+
+function mountingHoleExclusions(cfg) {
+  const r = cfg.cbDia / 2.0;
+  return mountingHolePoints(cfg).map(([x, y]) => [x, y, r]);
+}
+
+function fitAndCenter(spacing, lo, hi) {
+  const span = hi - lo;
+  if (span <= 0 || spacing <= 0) return [];
+  let count = Math.max(1, Math.floor(span / spacing) + 1);
+  while (count > 1 && spacing * (count - 1) > span) count--;
+  const center = (lo + hi) / 2.0;
+  return evenlySpaced(count, spacing).map((p) => center + p);
+}
+
+function gridfinityCells(cfg) {
+  if (!cfg.enableGridfinity) return [];
+  const pitch = 42.0;
+  const cellHalf = 41.5 / 2.0;
+  const margin = cellHalf + 4.0;
+  const seam = cellHalf + 4.0;
+  const halfX = cfg.length / 2.0, halfY = cfg.width / 2.0;
+
+  function quadrantGrid(xLo, xHi, yLo, yHi) {
+    const xs = fitAndCenter(pitch, xLo, xHi);
+    const ys = fitAndCenter(pitch, yLo, yHi);
+    const pts = [];
+    for (const x of xs) for (const y of ys) pts.push([x, y]);
+    return pts;
+  }
+
+  const q3 = quadrantGrid(-halfX + margin, -seam, -halfY + margin, -seam);
+  if (cfg.gridfinityQ3Only) return q3;
+
+  const q1 = quadrantGrid(seam, halfX - margin, seam, halfY - margin);
+  const q2 = quadrantGrid(-halfX + margin, -seam, seam, halfY - margin);
+  const q4 = quadrantGrid(seam, halfX - margin, -halfY + margin, -seam);
+  return q3.concat(q1, q2, q4);
+}
+
+function gridfinityExclusions(cfg) {
+  const r = (41.5 / 2.0) * Math.sqrt(2);
+  return gridfinityCells(cfg).map(([x, y]) => [x, y, r]);
+}
+
+function crossesSeam(cfg, x, y) {
+  let halfExtentX, halfExtentY;
+  if (cfg.holeShape === "slot") {
+    const halfLen = cfg.holeSlotLength / 2.0 + cfg.holeDiameter / 2.0;
+    const halfW = cfg.holeDiameter / 2.0;
+    if (cfg.holeSlotAxis === "x") { halfExtentX = halfLen; halfExtentY = halfW; }
+    else { halfExtentX = halfW; halfExtentY = halfLen; }
+  } else {
+    halfExtentX = halfExtentY = cfg.holeDiameter / 2.0;
+  }
+  return Math.abs(x) < halfExtentX + cfg.minClearance || Math.abs(y) < halfExtentY + cfg.minClearance;
+}
+
+function computeCustomHoles(cfg) {
+  if (!cfg.enableHoles) return { kept: [], skipped: 0 };
+  const candidates = gridPoints(cfg.holeCountX, cfg.holeSpacingX, cfg.holeCountY, cfg.holeSpacingY);
+  const exclusions = mountingHoleExclusions(cfg).concat(gridfinityExclusions(cfg));
+  const halfX = cfg.length / 2.0 - cfg.holeFieldMargin;
+  const halfY = cfg.width / 2.0 - cfg.holeFieldMargin;
+  const kept = [];
+  let skipped = 0;
+  for (const [x, y] of candidates) {
+    if (Math.abs(x) > halfX || Math.abs(y) > halfY || crossesSeam(cfg, x, y)) { skipped++; continue; }
+    let ok;
+    if (cfg.holeShape === "slot") {
+      ok = slotOk(x, y, cfg.holeSlotLength / 2.0, cfg.holeSlotAxis, cfg.holeDiameter / 2.0, exclusions, cfg.minClearance);
+    } else {
+      ok = circleOk(x, y, cfg.holeDiameter / 2.0, exclusions, cfg.minClearance);
+    }
+    if (ok) kept.push([x, y]); else skipped++;
+  }
+  return { kept, skipped };
+}
+
+function computeInfill(cfg, customHolePoints) {
+  if (cfg.infillPattern === "none" || cfg.infillSpacing <= 0) return { kept: [], skipped: 0, capped: false };
+  const halfX = cfg.length / 2.0 - cfg.infillFieldMargin;
+  const halfY = cfg.width / 2.0 - cfg.infillFieldMargin;
+  if (halfX <= 0 || halfY <= 0) return { kept: [], skipped: 0, capped: false };
+
+  let candidates;
+  if (cfg.infillPattern === "honeycomb") {
+    candidates = hexPoints(cfg.infillSpacing, halfX, halfY);
+  } else if (cfg.infillPattern === "diagonal") {
+    const pad = halfX + halfY;
+    const nx = Math.floor((halfX + pad) / cfg.infillSpacing) + 2;
+    const ny = Math.floor((halfY + pad) / cfg.infillSpacing) + 2;
+    const raw = gridPoints(nx * 2 + 1, cfg.infillSpacing, ny * 2 + 1, cfg.infillSpacing);
+    candidates = raw.map(([x, y]) => rotatePoint(x, y, 45));
+  } else {
+    const nx = Math.floor(halfX / cfg.infillSpacing) + 1;
+    const ny = Math.floor(halfY / cfg.infillSpacing) + 1;
+    candidates = gridPoints(nx * 2 + 1, cfg.infillSpacing, ny * 2 + 1, cfg.infillSpacing);
+  }
+
+  const featureRadius = cfg.infillCutWidth / 2.0;
+  const exclusions = mountingHoleExclusions(cfg).concat(gridfinityExclusions(cfg));
+  for (const [x, y] of customHolePoints) {
+    const boundingR = cfg.holeShape === "slot" ? (cfg.holeDiameter + cfg.holeSlotLength) / 2.0 : cfg.holeDiameter / 2.0;
+    exclusions.push([x, y, boundingR]);
+  }
+
+  const kept = [];
+  let skipped = 0;
+  for (const [x, y] of candidates) {
+    if (Math.abs(x) > halfX || Math.abs(y) > halfY) continue;
+    if (circleOk(x, y, featureRadius, exclusions, cfg.minClearance)) kept.push([x, y]);
+    else skipped++;
+  }
+  const capped = kept.length > MAX_INFILL_FEATURES;
+  return { kept: capped ? kept.slice(0, MAX_INFILL_FEATURES) : kept, skipped, capped, total: kept.length };
+}
+
+// ---------------------------------------------------------------------
+// UI wiring + SVG rendering
+// ---------------------------------------------------------------------
+const SVG_NS = "http://www.w3.org/2000/svg";
+const inputIds = [
+  "length", "width", "thickness",
+  "enableGridfinity", "gridfinityQ3Only", "gridfinityMagnets",
+  "enableHoles", "holeShape", "holeDiameter", "holeSlotLength", "holeSlotAxis",
+  "holeCountX", "holeCountY", "holeSpacingX", "holeSpacingY",
+  "infillPattern", "infillSpacing", "infillCutWidth",
+  "minClearance",
+];
+
+let currentView = "assembled";
+
+function readConfig() {
+  const cfg = Object.assign({}, DEFAULT_CONFIG);
+  cfg.length = num("length");
+  cfg.width = num("width");
+  cfg.thickness = num("thickness");
+  cfg.enableGridfinity = bool("enableGridfinity");
+  cfg.gridfinityQ3Only = bool("gridfinityQ3Only");
+  cfg.gridfinityMagnets = bool("gridfinityMagnets");
+  cfg.enableHoles = bool("enableHoles");
+  cfg.holeShape = str("holeShape");
+  cfg.holeDiameter = num("holeDiameter");
+  cfg.holeSlotLength = num("holeSlotLength");
+  cfg.holeSlotAxis = str("holeSlotAxis");
+  cfg.holeCountX = Math.max(1, Math.round(num("holeCountX")));
+  cfg.holeCountY = Math.max(1, Math.round(num("holeCountY")));
+  cfg.holeSpacingX = num("holeSpacingX");
+  cfg.holeSpacingY = num("holeSpacingY");
+  cfg.infillPattern = str("infillPattern");
+  cfg.infillSpacing = num("infillSpacing");
+  cfg.infillCutWidth = num("infillCutWidth");
+  cfg.minClearance = num("minClearance");
+  return cfg;
+}
+
+function num(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function str(id) { return document.getElementById(id).value; }
+function bool(id) { return document.getElementById(id).checked; }
+
+function el(tag, attrs) {
+  const e = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+// Rounded rect where only ONE corner (by sign of the corner's own x/y
+// relative to the rect) carries the panel's real corner_radius - used
+// for the exploded view, where 3 of each quadrant's 4 corners are cut
+// edges (seams / lap joints), not the original panel silhouette.
+function quadrantOutlinePath(x0, y0, x1, y1, cornerR, roundedCorner) {
+  // roundedCorner: "tl" | "tr" | "bl" | "br" - which corner gets the radius
+  const r = Math.max(0, Math.min(cornerR, Math.abs(x1 - x0) / 2, Math.abs(y1 - y0) / 2));
+  const corners = { tl: [x0, y0], tr: [x1, y0], bl: [x0, y1], br: [x1, y1] };
+  let d = `M ${x0} ${y0} L ${x1} ${y0} L ${x1} ${y1} L ${x0} ${y1} Z`;
+  if (r <= 0) return d;
+  // Build path manually with an arc cut at the rounded corner
+  if (roundedCorner === "tr") {
+    d = `M ${x0} ${y0} L ${x1 - r} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y0 + r} L ${x1} ${y1} L ${x0} ${y1} Z`;
+  } else if (roundedCorner === "tl") {
+    d = `M ${x0 + r} ${y0} L ${x1} ${y0} L ${x1} ${y1} L ${x0} ${y1} L ${x0} ${y0 + r} A ${r} ${r} 0 0 1 ${x0 + r} ${y0} Z`;
+  } else if (roundedCorner === "br") {
+    d = `M ${x0} ${y0} L ${x1} ${y0} L ${x1} ${y1 - r} A ${r} ${r} 0 0 1 ${x1 - r} ${y1} L ${x0} ${y1} Z`;
+  } else if (roundedCorner === "bl") {
+    d = `M ${x0} ${y0} L ${x1} ${y0} L ${x1} ${y1} L ${x0 + r} ${y1} A ${r} ${r} 0 0 1 ${x0} ${y1 - r} L ${x0} ${y0} Z`;
+  }
+  return d;
+}
+
+function slotPath(cx, cy, totalLength, diameter, axis) {
+  // A stadium/capsule shape matching CadQuery's slot2D(length, diameter, angle)
+  const r = diameter / 2.0;
+  const straight = totalLength - diameter;
+  const half = straight / 2.0;
+  if (axis === "y") {
+    return `M ${cx - r} ${cy - half} L ${cx - r} ${cy + half} A ${r} ${r} 0 0 0 ${cx + r} ${cy + half} L ${cx + r} ${cy - half} A ${r} ${r} 0 0 0 ${cx - r} ${cy - half} Z`;
+  }
+  return `M ${cx - half} ${cy - r} L ${cx + half} ${cy - r} A ${r} ${r} 0 0 1 ${cx + half} ${cy + r} L ${cx - half} ${cy + r} A ${r} ${r} 0 0 1 ${cx - half} ${cy - r} Z`;
+}
+
+function hexPath(cx, cy, flatToFlat) {
+  // Matches CadQuery's polygon(6, diameter, circumscribed=True): flat side
+  // facing +x, i.e. vertices at 30,90,150,210,270,330 degrees.
+  const r = flatToFlat / 2.0 / Math.cos(Math.PI / 6);
+  let d = "";
+  for (let k = 0; k < 6; k++) {
+    const a = (Math.PI / 180) * (30 + 60 * k);
+    const x = cx + r * Math.cos(a);
+    const y = cy + r * Math.sin(a);
+    d += (k === 0 ? "M " : "L ") + x + " " + y + " ";
+  }
+  return d + "Z";
+}
+
+function quadrantOf(x, y) {
+  if (x >= 0 && y >= 0) return "Q1_TopRight";
+  if (x < 0 && y >= 0) return "Q2_TopLeft";
+  if (x < 0 && y < 0) return "Q3_BottomLeft";
+  return "Q4_BottomRight";
+}
+
+const EXPLODE_GAP = 40;
+const QUADRANT_OFFSET = {
+  Q1_TopRight: [EXPLODE_GAP / 2, EXPLODE_GAP / 2],
+  Q2_TopLeft: [-EXPLODE_GAP / 2, EXPLODE_GAP / 2],
+  Q3_BottomLeft: [-EXPLODE_GAP / 2, -EXPLODE_GAP / 2],
+  Q4_BottomRight: [EXPLODE_GAP / 2, -EXPLODE_GAP / 2],
+};
+const ROUNDED_CORNER = {
+  Q1_TopRight: "tr", Q2_TopLeft: "tl", Q3_BottomLeft: "bl", Q4_BottomRight: "br",
+};
+
+function render() {
+  const cfg = readConfig();
+  const svg = document.getElementById("svgPreview");
+  svg.innerHTML = "";
+
+  const mounting = mountingHolePoints(cfg);
+  const gridfinity = gridfinityCells(cfg);
+  const { kept: holes, skipped: holesSkipped } = computeCustomHoles(cfg);
+  const { kept: infill, skipped: infillSkipped, capped, total } = computeInfill(cfg, holes);
+
+  // --- stats + warnings ---
+  const statsBox = document.getElementById("statsBox");
+  statsBox.innerHTML = `
+    <span class="stat"><b>${mounting.length}</b> mounting holes</span>
+    <span class="stat"><b>${gridfinity.length}</b> Gridfinity cells</span>
+    <span class="stat"><b>${holes.length}</b> custom holes placed${holesSkipped ? ` (${holesSkipped} skipped)` : ""}</span>
+    <span class="stat"><b>${infill.length}</b> infill features placed${infillSkipped ? ` (${infillSkipped} skipped)` : ""}</span>
+  `;
+  const warningBox = document.getElementById("warningBox");
+  if (capped) {
+    warningBox.style.display = "block";
+    warningBox.textContent = `Infill pattern would generate ${total} features - capped at ${MAX_INFILL_FEATURES} for preview/build safety. Increase the spacing.`;
+  } else {
+    warningBox.style.display = "none";
+  }
+
+  const halfX = cfg.length / 2.0, halfY = cfg.width / 2.0;
+
+  if (currentView === "assembled") {
+    const pad = 30;
+    svg.setAttribute("viewBox", `${-halfX - pad} ${-halfY - pad} ${cfg.length + pad * 2} ${cfg.width + pad * 2}`);
+    const g = el("g", { transform: "scale(1,-1)" }); // model +Y up -> flip for SVG
+    svg.appendChild(g);
+
+    g.appendChild(el("rect", {
+      x: -halfX, y: -halfY, width: cfg.length, height: cfg.width, rx: cfg.cornerRadius, ry: cfg.cornerRadius,
+      fill: "var(--c-panel-fill)", stroke: "var(--c-panel-stroke)", "stroke-width": 1.5,
+    }));
+
+    // seam lines
+    g.appendChild(el("line", { x1: 0, y1: -halfY, x2: 0, y2: halfY, stroke: "var(--c-seam)", "stroke-width": 1, "stroke-dasharray": "6 5" }));
+    g.appendChild(el("line", { x1: -halfX, y1: 0, x2: halfX, y2: 0, stroke: "var(--c-seam)", "stroke-width": 1, "stroke-dasharray": "6 5" }));
+
+    drawFeatures(g, cfg, mounting, gridfinity, holes, infill);
+  } else {
+    // exploded view: bucket every feature by quadrant, offset outward
+    const buckets = { Q1_TopRight: { m: [], g: [], h: [], i: [] }, Q2_TopLeft: { m: [], g: [], h: [], i: [] },
+                       Q3_BottomLeft: { m: [], g: [], h: [], i: [] }, Q4_BottomRight: { m: [], g: [], h: [], i: [] } };
+    mounting.forEach((p) => buckets[quadrantOf(p[0], p[1])].m.push(p));
+    gridfinity.forEach((p) => buckets[quadrantOf(p[0], p[1])].g.push(p));
+    holes.forEach((p) => buckets[quadrantOf(p[0], p[1])].h.push(p));
+    infill.forEach((p) => buckets[quadrantOf(p[0], p[1])].i.push(p));
+
+    const span = (cfg.length / 2 + EXPLODE_GAP / 2 + 30);
+    const spanY = (cfg.width / 2 + EXPLODE_GAP / 2 + 30);
+    svg.setAttribute("viewBox", `${-span} ${-spanY} ${span * 2} ${spanY * 2}`);
+    const root = el("g", { transform: "scale(1,-1)" });
+    svg.appendChild(root);
+
+    for (const qName of Object.keys(buckets)) {
+      const [ox, oy] = QUADRANT_OFFSET[qName];
+      const [bx0, by0, bx1, by1] = quadrantBoundsFor(qName, halfX, halfY);
+      const g = el("g", { transform: `translate(${ox} ${oy})` });
+      root.appendChild(g);
+
+      g.appendChild(el("path", {
+        d: quadrantOutlinePath(bx0, by0, bx1, by1, cfg.cornerRadius, ROUNDED_CORNER[qName]),
+        fill: "var(--c-panel-fill)", stroke: "var(--c-panel-stroke)", "stroke-width": 1.5,
+      }));
+
+      // lap joint zone indicators (informational, ~12mm inset from the two seam edges)
+      const lap = 12;
+      if (bx0 === 0 || bx1 === 0) {
+        const sx = bx0 === 0 ? lap : -lap;
+        g.appendChild(el("line", { x1: sx, y1: by0, x2: sx, y2: by1, stroke: "var(--c-lap)", "stroke-width": 1, "stroke-dasharray": "3 4" }));
+      }
+      if (by0 === 0 || by1 === 0) {
+        const sy = by0 === 0 ? lap : -lap;
+        g.appendChild(el("line", { x1: bx0, y1: sy, x2: bx1, y2: sy, stroke: "var(--c-lap)", "stroke-width": 1, "stroke-dasharray": "3 4" }));
+      }
+
+      const b = buckets[qName];
+      drawFeatures(g, cfg, b.m, b.g, b.h, b.i);
+
+      const label = el("text", {
+        x: (bx0 + bx1) / 2, y: -(by0 + by1) / 2, "text-anchor": "middle",
+        transform: `translate(0 0) scale(1,-1)`, class: "quadrant-label",
+      });
+      label.textContent = qName.replace("_", " ");
+      // place label near outer corner instead of center to avoid covering features
+      label.setAttribute("x", bx0 + (bx1 - bx0) * 0.5);
+      label.setAttribute("y", -(by1 - (by1 - by0) * 0.06));
+      g.appendChild(label);
+    }
+  }
+}
+
+function quadrantBoundsFor(qName, halfX, halfY) {
+  if (qName === "Q1_TopRight") return [0, 0, halfX, halfY];
+  if (qName === "Q2_TopLeft") return [-halfX, 0, 0, halfY];
+  if (qName === "Q3_BottomLeft") return [-halfX, -halfY, 0, 0];
+  return [0, -halfY, halfX, 0];
+}
+
+function drawFeatures(g, cfg, mounting, gridfinity, holes, infill) {
+  for (const [x, y] of gridfinity) {
+    g.appendChild(el("rect", {
+      x: x - 41.5 / 2, y: y - 41.5 / 2, width: 41.5, height: 41.5, rx: 4, ry: 4,
+      fill: "var(--c-gridfinity-fill)", stroke: "var(--c-gridfinity-stroke)", "stroke-width": 0.8,
+    }));
+  }
+  for (const [x, y] of infill) {
+    if (cfg.infillPattern === "honeycomb") {
+      g.appendChild(el("path", { d: hexPath(x, y, cfg.infillCutWidth), fill: "var(--c-infill)", opacity: 0.55 }));
+    } else {
+      g.appendChild(el("circle", { cx: x, cy: y, r: cfg.infillCutWidth / 2, fill: "var(--c-infill)", opacity: 0.55 }));
+    }
+  }
+  for (const [x, y] of holes) {
+    if (cfg.holeShape === "slot") {
+      const total = cfg.holeDiameter + cfg.holeSlotLength;
+      g.appendChild(el("path", { d: slotPath(x, y, total, cfg.holeDiameter, cfg.holeSlotAxis), fill: "var(--c-hole)" }));
+    } else {
+      g.appendChild(el("circle", { cx: x, cy: y, r: cfg.holeDiameter / 2, fill: "var(--c-hole)" }));
+    }
+  }
+  for (const [x, y] of mounting) {
+    g.appendChild(el("circle", { cx: x, cy: y, r: cfg.cbDia / 2, fill: "none", stroke: "var(--c-mount)", "stroke-width": 1.2 }));
+    g.appendChild(el("circle", { cx: x, cy: y, r: cfg.cbThroughDia / 2, fill: "var(--c-mount)" }));
+  }
+}
+
+document.getElementById("viewToggle").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-view]");
+  if (!btn) return;
+  currentView = btn.dataset.view;
+  document.querySelectorAll("#viewToggle button").forEach((b) => b.classList.toggle("active", b === btn));
+  render();
+});
+
+function updateShapeVisibility() {
+  const isSlot = str("holeShape") === "slot";
+  document.getElementById("slotLengthRow").style.display = isSlot ? "flex" : "none";
+  document.getElementById("slotAxisRow").style.display = isSlot ? "flex" : "none";
+}
+
+inputIds.forEach((id) => {
+  document.getElementById(id).addEventListener("input", () => {
+    updateShapeVisibility();
+    render();
+  });
+});
+
+updateShapeVisibility();
+render();
+</script>
+</body>
+</html>

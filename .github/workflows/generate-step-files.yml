@@ -24,6 +24,49 @@ on:
         description: "Add magnet/screw holes to Gridfinity cells"
         type: boolean
         default: true
+      enable_holes:
+        description: "Add a custom hole pattern (separate from Gridfinity/mounting holes)"
+        type: boolean
+        default: false
+      hole_shape:
+        description: "Custom hole shape"
+        type: choice
+        options: [round, slot]
+        default: round
+      hole_diameter:
+        description: "Custom hole diameter (round) or slot width (slot), mm"
+        default: "5.0"
+      hole_slot_length:
+        description: "Slot only: extra straight length added beyond the width, mm"
+        default: "10.0"
+      hole_slot_axis:
+        description: "Slot only: elongation axis"
+        type: choice
+        options: [x, y]
+        default: x
+      hole_count_x:
+        description: "Custom holes: count along X"
+        default: "4"
+      hole_count_y:
+        description: "Custom holes: count along Y"
+        default: "3"
+      hole_spacing_x:
+        description: "Custom holes: spacing along X, mm (holes are centered/evenly spaced)"
+        default: "80.0"
+      hole_spacing_y:
+        description: "Custom holes: spacing along Y, mm"
+        default: "80.0"
+      infill_pattern:
+        description: "Infill pattern cut into the panel field instead of leaving it solid"
+        type: choice
+        options: [none, grid, honeycomb, diagonal]
+        default: none
+      infill_spacing:
+        description: "Infill: pitch between features, mm"
+        default: "20.0"
+      infill_cut_width:
+        description: "Infill: feature size (hole diameter, or hexagon flat-to-flat width), mm"
+        default: "10.0"
       export_stl:
         description: "Also export STL mesh files"
         type: boolean
@@ -54,6 +97,18 @@ jobs:
           ENABLE_GRIDFINITY: ${{ inputs.enable_gridfinity }}
           GRIDFINITY_Q3_ONLY: ${{ inputs.gridfinity_q3_only }}
           ADD_MAGNETS: ${{ inputs.add_magnets }}
+          ENABLE_HOLES: ${{ inputs.enable_holes }}
+          HOLE_SHAPE: ${{ inputs.hole_shape }}
+          HOLE_DIAMETER: ${{ inputs.hole_diameter }}
+          HOLE_SLOT_LENGTH: ${{ inputs.hole_slot_length }}
+          HOLE_SLOT_AXIS: ${{ inputs.hole_slot_axis }}
+          HOLE_COUNT_X: ${{ inputs.hole_count_x }}
+          HOLE_COUNT_Y: ${{ inputs.hole_count_y }}
+          HOLE_SPACING_X: ${{ inputs.hole_spacing_x }}
+          HOLE_SPACING_Y: ${{ inputs.hole_spacing_y }}
+          INFILL_PATTERN: ${{ inputs.infill_pattern }}
+          INFILL_SPACING: ${{ inputs.infill_spacing }}
+          INFILL_CUT_WIDTH: ${{ inputs.infill_cut_width }}
           EXPORT_STL: ${{ inputs.export_stl }}
         run: python generate_step_files.py
 
