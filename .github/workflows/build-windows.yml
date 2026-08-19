@@ -23,6 +23,9 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Stub out unused casadi dependency
+        run: python stub_casadi.py
+
       - name: Build EXE with PyInstaller
         run: python build_windows.py
 

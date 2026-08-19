@@ -2,11 +2,10 @@
 Build script for the Windows GitHub Actions runner.
 
 CadQuery pulls in several compiled/DLL-heavy dependencies (OCP - the
-OpenCascade bindings, casadi - a solver library CadQuery imports at
-top level even if you never use cq.Assembly, ezdxf, etc). PyInstaller's
-default single-file (--onefile) mode is unreliable at locating sibling
-DLLs for packages like these, and UPX compression can corrupt some of
-those DLLs outright. This script:
+OpenCascade bindings, ezdxf, etc). PyInstaller's default single-file
+(--onefile) mode is unreliable at locating sibling DLLs for packages
+like these, and UPX compression can corrupt some of those DLLs
+outright. This script:
 
   - builds in --onedir mode (exe + all DLLs sit together in one folder,
     which lets Windows' normal "look next to the exe" DLL search find
@@ -20,6 +19,11 @@ those DLLs outright. This script:
     these ship (a common pattern for wheels that vendor their own DLLs),
     when one is actually importable, so we don't pass a bogus argument
     for packages that don't have one
+
+Note: casadi is deliberately NOT in these lists. It's swapped for an
+inert stub by stub_casadi.py before this script ever runs - see that
+file for why. Don't add casadi back here without reverting that step
+first, or you'll re-bundle the real (broken-under-PyInstaller) package.
 """
 
 import importlib.metadata
@@ -32,7 +36,6 @@ import sys
 COLLECT_ALL = [
     "cadquery",
     "OCP",
-    "casadi",
     "ezdxf",
     "multimethod",
     "nptyping",
@@ -48,7 +51,6 @@ COLLECT_ALL = [
 COPY_METADATA_DIST_NAMES = {
     "cadquery": "cadquery",
     "OCP": "cadquery-ocp",
-    "casadi": "casadi",
     "ezdxf": "ezdxf",
     "multimethod": "multimethod",
     "nptyping": "nptyping",
@@ -95,9 +97,8 @@ def main() -> None:
             print(f"[build] skipping --copy-metadata {dist_name} (no distribution metadata found for module {module_name})")
 
     # Sibling ".libs" folders some delvewheel-repaired wheels ship
-    # (e.g. casadi.libs) that carry DLLs not reached by collect-all
-    # on the base package name.
-    for extra in ("casadi.libs", "OCP.libs", "cadquery.libs", "scipy.libs", "numpy.libs"):
+    # that carry DLLs not reached by collect-all on the base package name.
+    for extra in ("OCP.libs", "cadquery.libs", "scipy.libs", "numpy.libs"):
         if module_available(extra):
             args += ["--collect-all", extra]
             print(f"[build] also collecting {extra}")

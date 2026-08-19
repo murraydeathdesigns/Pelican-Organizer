@@ -63,9 +63,14 @@ build.
 
 ## If the build fails (red X instead of green check)
 
-Click into the failed run, open the "Build EXE with PyInstaller" step,
+Click into the failed run, open whichever step is marked with a red X,
 and copy the red error text back to me — I'll adjust the workflow or
-script and you re-upload just the changed file.
+script and you re-upload just the changed file(s).
+
+Note: the build intentionally strips out and replaces (`stub_casadi.py`)
+one of CadQuery's dependencies, `casadi` — it's only used by a CadQuery
+feature this app doesn't touch, and its real package is notoriously
+unreliable to bundle with PyInstaller.
 
 ## Using the app
 
