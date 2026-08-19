@@ -22,11 +22,13 @@ those DLLs outright. This script:
     for packages that don't have one
 """
 
+import importlib.metadata
 import importlib.util
 import subprocess
 import sys
 
 # Packages known to need full collection when freezing CadQuery apps.
+# --collect-all operates on the importable MODULE name.
 COLLECT_ALL = [
     "cadquery",
     "OCP",
@@ -39,15 +41,19 @@ COLLECT_ALL = [
     "scipy",
 ]
 
-COPY_METADATA = [
-    "cadquery",
-    "OCP",
-    "casadi",
-    "ezdxf",
-    "multimethod",
-    "nptyping",
-    "typish",
-]
+# --copy-metadata operates on the installed PyPI DISTRIBUTION name, which
+# isn't always the same as the module name you import (e.g. the "OCP"
+# module ships in a distribution literally called "cadquery-ocp"). Map
+# module name -> distribution name here whenever they differ.
+COPY_METADATA_DIST_NAMES = {
+    "cadquery": "cadquery",
+    "OCP": "cadquery-ocp",
+    "casadi": "casadi",
+    "ezdxf": "ezdxf",
+    "multimethod": "multimethod",
+    "nptyping": "nptyping",
+    "typish": "typish",
+}
 
 
 def module_available(name: str) -> bool:
@@ -55,6 +61,14 @@ def module_available(name: str) -> bool:
         return importlib.util.find_spec(name) is not None
     except (ImportError, ValueError):
         return False
+
+
+def dist_name_if_installed(dist_name: str):
+    try:
+        importlib.metadata.distribution(dist_name)
+        return dist_name
+    except importlib.metadata.PackageNotFoundError:
+        return None
 
 
 def main() -> None:
@@ -73,9 +87,12 @@ def main() -> None:
         else:
             print(f"[build] skipping --collect-all {pkg} (not installed)")
 
-    for pkg in COPY_METADATA:
-        if module_available(pkg):
-            args += ["--copy-metadata", pkg]
+    for module_name, dist_name in COPY_METADATA_DIST_NAMES.items():
+        resolved = dist_name_if_installed(dist_name)
+        if resolved:
+            args += ["--copy-metadata", resolved]
+        else:
+            print(f"[build] skipping --copy-metadata {dist_name} (no distribution metadata found for module {module_name})")
 
     # Sibling ".libs" folders some delvewheel-repaired wheels ship
     # (e.g. casadi.libs) that carry DLLs not reached by collect-all
