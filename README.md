@@ -48,12 +48,18 @@ build.
 5. **Download your app**:
    - Click into the finished run.
    - Scroll down to "Artifacts" and download `PelicanOrganizer-windows-exe`
-     (a small zip file).
-   - Unzip it — inside is `PelicanOrganizer.exe`.
-   - Double-click it. That's your app. No installer, no Python, nothing
-     else needed. (First launch takes a few seconds longer than normal —
-     that's the `.exe` unpacking itself into a temp folder, which it
-     does every time since this is a single-file build.)
+     (a zip file — this one's bigger than before, tens of MB, because it
+     now bundles CadQuery's full dependency chain alongside the exe
+     instead of trying to cram it into one file).
+   - Unzip it into its own folder somewhere permanent (e.g.
+     `C:\Apps\PelicanOrganizer\`). **Keep every file in that folder
+     together** — `PelicanOrganizer.exe` needs its neighboring DLL/data
+     files sitting right next to it to run. Don't copy just the .exe
+     out on its own.
+   - Double-click `PelicanOrganizer.exe`. That's your app — no
+     installer, no Python, nothing else needed. You can make a shortcut
+     to it on your Desktop/Start Menu; just don't move the .exe itself
+     out of its folder.
 
 ## If the build fails (red X instead of green check)
 

@@ -24,10 +24,10 @@ jobs:
           pip install pyinstaller
 
       - name: Build EXE with PyInstaller
-        run: pyinstaller --onefile --windowed --name PelicanOrganizer --collect-all cadquery --collect-all OCP organizer_app.py
+        run: python build_windows.py
 
-      - name: Upload EXE artifact
+      - name: Upload EXE folder artifact
         uses: actions/upload-artifact@v4
         with:
           name: PelicanOrganizer-windows-exe
-          path: dist/PelicanOrganizer.exe
+          path: dist/PelicanOrganizer/
